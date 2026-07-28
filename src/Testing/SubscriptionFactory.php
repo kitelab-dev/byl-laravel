@@ -55,13 +55,28 @@ class SubscriptionFactory
     {
         $trialDays = (int) ($attributes['trial_days'] ?? 14);
 
+        // Туршилт эхлүүлэх хүсэлт нь `price` талбарт lookup key дамжуулж
+        // болдог — хариунд байх ёстой үнийн объектыг тэр string дарж
+        // бичихгүйн тулд lookup key болгож буулгана.
+        $lookupKey = is_string($attributes['price'] ?? null) ? $attributes['price'] : null;
+
         unset($attributes['trial_days']);
 
-        return self::make(array_merge([
+        if ($lookupKey !== null) {
+            unset($attributes['price']);
+        }
+
+        $subscription = self::make(array_merge([
             'status' => 'trialing',
             'current_period_start' => Carbon::now()->toJSON(),
             'current_period_end' => Carbon::now()->addDays($trialDays)->endOfDay()->toJSON(),
             'trial_ends_at' => Carbon::now()->addDays($trialDays)->endOfDay()->toJSON(),
         ], $attributes));
+
+        if ($lookupKey !== null) {
+            $subscription['price']['lookup_key'] = $lookupKey;
+        }
+
+        return $subscription;
     }
 }

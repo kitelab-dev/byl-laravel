@@ -89,6 +89,37 @@ it('туршилтын захиалга эхлүүлнэ', function () {
         && $request['trial_days'] === 14);
 });
 
+it('lookup key-ээр туршилт эхлүүлнэ', function () {
+    Http::fake([
+        'byl.mn/api/v1/projects/1/subscriptions' => Http::response(bylResponse(SubscriptionFactory::trialing([
+            'id' => 9,
+            'trial_days' => 14,
+            'price' => 'starter_monthly',
+        ])), 201),
+    ]);
+
+    $subscription = Byl::subscriptions()->startTrial(12, 'starter_monthly', 14);
+
+    expect($subscription->onTrial())->toBeTrue()
+        ->and($subscription->price?->lookupKey)->toBe('starter_monthly');
+
+    Http::assertSent(fn (Request $request) => $request['price'] === 'starter_monthly'
+        && ! isset($request['price_id']));
+});
+
+it('жагсаалтыг lookup key-ээр filter хийнэ', function () {
+    Http::fake([
+        'byl.mn/*/subscriptions*' => Http::response([
+            'data' => [SubscriptionFactory::make(['id' => 4])],
+            'meta' => ['current_page' => 1, 'last_page' => 1, 'per_page' => 25, 'total' => 1],
+        ]),
+    ]);
+
+    expect(Byl::subscriptions()->list(['price' => 'starter_monthly']))->toHaveCount(1);
+
+    Http::assertSent(fn (Request $request) => str_contains($request->url(), 'price=starter_monthly'));
+});
+
 it('захиалгыг цуцалж, дахин буцаана', function () {
     Http::fake([
         'byl.mn/*/subscriptions/4/cancel' => Http::response(bylResponse(SubscriptionFactory::make([

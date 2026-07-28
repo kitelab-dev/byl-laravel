@@ -6,7 +6,6 @@ use Byl\Laravel\Billing\Models\Subscription;
 use Byl\Laravel\Data\CreatedCheckout;
 use Byl\Laravel\Facades\Byl;
 use Illuminate\Database\Eloquent\Model;
-use LogicException;
 
 /**
  * Шинэ захиалга эхлүүлэх урсгал. Byl дээр төлбөр автоматаар суутгагддаггүй
@@ -99,22 +98,14 @@ class SubscriptionBuilder
     /**
      * Төлбөргүй туршилтын захиалгыг шууд эхлүүлнэ (1–365 хоног).
      *
-     * Туршилтын API нь `price_id` шаарддаг тул lookup key биш үнийн ID-г
-     * дамжуулсан байх ёстой. Нэг харилцагч нэг бүтээгдэхүүн дээр нэг л
-     * удаа туршилт авч болно.
+     * `checkout()`-той адил үнийн ID эсвэл lookup key хоёуланг хүлээж авна.
+     * Нэг харилцагч нэг бүтээгдэхүүн дээр нэг л удаа туршилт авч болно.
      */
     public function startTrial(int $days): Subscription
     {
-        if (! is_numeric($this->price)) {
-            throw new LogicException(sprintf(
-                'Туршилт эхлүүлэхэд үнийн ID шаардлагатай — "%s" гэсэн lookup key-ийг Byl API дэмждэггүй. newSubscription($priceId)->startTrial() гэж дуудна уу.',
-                $this->price,
-            ));
-        }
-
         $subscription = Byl::subscriptions()->startTrial(
             $this->billable->bylCustomerIdOrCreate(),
-            (int) $this->price,
+            is_numeric($this->price) ? (int) $this->price : (string) $this->price,
             $days,
         );
 

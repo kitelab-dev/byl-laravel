@@ -199,8 +199,9 @@ $subscription->currentPeriodEnd;        // эрхийн дуусах хугац�
 $subscription->daysUntilPeriodEnd();
 $subscription->cancelRequested();       // цуцлалт хүссэн ч мөчлөг дуусаагүй
 
-// Жагсаалт (хуудаслалттай)
+// Жагсаалт (хуудаслалттай). Filter: customer_id, price_id, price, status
 $page = Byl::subscriptions()->list(['status' => 'active']);
+$page = Byl::subscriptions()->list(['price' => 'starter_monthly']);
 $page = Byl::subscriptions()->forCustomer(12, SubscriptionStatus::Active);
 
 foreach ($page as $subscription) { /* ... */ }
@@ -209,8 +210,9 @@ $page->hasMorePages();
 // Бүх хуудсыг lazy байдлаар
 Byl::subscriptions()->all(['status' => 'active'])->each(fn ($subscription) => /* ... */);
 
-// Туршилт (төлбөргүй) — 1–365 хоног
-Byl::subscriptions()->startTrial(customerId: 12, priceId: 3, trialDays: 14);
+// Туршилт (төлбөргүй) — 1–365 хоног. Үнийн ID эсвэл lookup key
+Byl::subscriptions()->startTrial(customerId: 12, price: 3, trialDays: 14);
+Byl::subscriptions()->startTrial(customerId: 12, price: 'starter_monthly', trialDays: 14);
 
 // Цуцлах / буцаах (мөчлөгийн төгсгөлд хэрэгжинэ)
 Byl::subscriptions()->cancel(4);
@@ -280,8 +282,8 @@ return $user->newSubscription('starter_monthly')
 // Хэд хэдэн мөчлөгийг нэг дор
 $user->newSubscription('starter_monthly')->cycles(3)->checkout();
 
-// Төлбөргүй туршилт — үнийн ID шаардлагатай (lookup key биш)
-$user->newSubscription(priceId: 3)->startTrial(14);
+// Төлбөргүй туршилт — lookup key эсвэл үнийн ID
+$user->newSubscription('starter_monthly')->startTrial(14);
 ```
 
 Харилцагч Byl дээр байхгүй бол `checkout()` / `startTrial()` нь `client_reference_id`-аар upsert хийж `byl_customer_id`-г автоматаар хадгална.
@@ -306,7 +308,7 @@ $subscription->syncFromByl(); // Byl дээрх төлөвөөр дахин та
 | `$user->subscribed('default')` | `$user->subscribed('starter_monthly')` |
 | `$user->subscription()` | `$user->bylSubscription()` |
 | `$user->newSubscription(...)->checkout()` | `$user->newSubscription('starter_monthly')->checkout()` |
-| `$user->newSubscription(...)->trialDays(14)->create()` | `$user->newSubscription($priceId)->startTrial(14)` |
+| `$user->newSubscription(...)->trialDays(14)->create()` | `$user->newSubscription('starter_monthly')->startTrial(14)` |
 | `$subscription->swap($price)` | `$subscription->swapCheckout($price)` |
 | — | `$subscription->renewCheckout($cycles)` |
 | `$user->redirectToBillingPortal()` | `$user->redirectToBillingPortal()` |

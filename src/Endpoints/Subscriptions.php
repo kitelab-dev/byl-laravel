@@ -13,7 +13,8 @@ use Illuminate\Support\LazyCollection;
 class Subscriptions extends Endpoint
 {
     /**
-     * Захиалгын жагсаалт (хуудсаар). Filter: `customer_id`, `price_id`, `status`.
+     * Захиалгын жагсаалт (хуудсаар). Filter: `customer_id`, `price_id`,
+     * `price` (lookup key), `status`.
      *
      * @param  array<string, mixed>  $filters
      * @return Page<Subscription>
@@ -69,12 +70,14 @@ class Subscriptions extends Endpoint
     /**
      * Төлбөргүй туршилтын захиалга эхлүүлнэ (1–365 хоног). Нэг харилцагч
      * нэг бүтээгдэхүүн дээр нэг л удаа туршилт авч болно.
+     *
+     * `$price` нь үнийн ID эсвэл lookup key (жш: `starter_monthly`).
      */
-    public function startTrial(int|string $customerId, int|string $priceId, int $trialDays): Subscription
+    public function startTrial(int|string $customerId, int|string $price, int $trialDays): Subscription
     {
         return Subscription::fromArray($this->client->data($this->client->post('subscriptions', [
             'customer_id' => $customerId,
-            'price_id' => $priceId,
+            ...$this->priceParameter($price),
             'trial_days' => $trialDays,
         ])));
     }
@@ -97,6 +100,19 @@ class Subscriptions extends Endpoint
         return Subscription::fromArray(
             $this->client->data($this->client->post("subscriptions/{$id}/resume"))
         );
+    }
+
+    /**
+     * Byl нь үнийг ID (`price_id`) эсвэл lookup key (`price`) хоёр хэлбэрээр
+     * хүлээж авдаг — тоо мэт утгыг ID гэж үзнэ.
+     *
+     * @return array<string, mixed>
+     */
+    protected function priceParameter(int|string $price): array
+    {
+        return is_numeric($price)
+            ? ['price_id' => (int) $price]
+            : ['price' => $price];
     }
 
     /**

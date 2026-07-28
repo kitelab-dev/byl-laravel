@@ -2,7 +2,21 @@
 
 Бүх томоохон өөрчлөлтийг энд бүртгэнэ.
 
-## v0.1.0 — гараагүй
+## v0.1.1
+
+- Туршилт эхлүүлэхэд үнийн **lookup key** дэмжигдэв —
+  `Byl::subscriptions()->startTrial(12, 'starter_monthly', 14)` болон
+  `$user->newSubscription('starter_monthly')->startTrial(14)`. Өмнө нь
+  зөвхөн үнийн ID зөвшөөрөгдөж, lookup key дамжуулбал `LogicException`
+  шидэгддэг байсан — тэр хязгаарлалт болон онцгой тохиолдол хоёулаа
+  устав.
+- Захиалгын жагсаалтад `price` (lookup key) filter нэмэгдэв:
+  `Byl::subscriptions()->list(['price' => 'starter_monthly'])`.
+- `Endpoints\Subscriptions::startTrial()`-ийн хоёрдугаар параметр
+  `$priceId` → `$price` болов (нэрлэсэн аргументаар дуудаж байсан бол
+  шинэчилнэ).
+
+## v0.1.0
 
 Эхний хувилбар.
 

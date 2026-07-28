@@ -54,11 +54,18 @@ it('туршилтын захиалгыг локал хүснэгтэд бичн
         && $payload['trial_days'] === 14);
 });
 
-it('lookup key-ээр туршилт эхлүүлэхийг ойлгомжтой хориглоно', function () {
-    Byl::fake();
+it('lookup key-ээр ч туршилт эхлүүлнэ', function () {
+    $fake = Byl::fake();
 
-    expect(fn () => $this->createUser()->newSubscription('starter_monthly')->startTrial(14))
-        ->toThrow(LogicException::class, 'үнийн ID шаардлагатай');
+    $subscription = $this->createUser(['byl_customer_id' => 12])
+        ->newSubscription('starter_monthly')
+        ->startTrial(14);
+
+    expect($subscription->status)->toBe(SubscriptionStatus::Trialing)
+        ->and($subscription->lookup_key)->toBe('starter_monthly');
+
+    $fake->assertTrialStarted(fn (array $payload) => $payload['price'] === 'starter_monthly'
+        && ! isset($payload['price_id']));
 });
 
 it('нэг удаагийн checkout-д харилцагч холбогдоно', function () {
