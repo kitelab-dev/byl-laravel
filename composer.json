@@ -1,0 +1,66 @@
+{
+    "name": "kitelab-dev/byl-laravel",
+    "description": "Byl.mn төлбөрийн системийн Laravel SDK — нэхэмжлэх, checkout, харилцагч, захиалга, webhook.",
+    "keywords": [
+        "byl",
+        "byl.mn",
+        "laravel",
+        "payment",
+        "invoice",
+        "checkout",
+        "subscription",
+        "mongolia"
+    ],
+    "homepage": "https://byl.mn/docs",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kitelab",
+            "homepage": "https://byl.mn"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "guzzlehttp/promises": "^2.0",
+        "illuminate/contracts": "^11.0|^12.0|^13.0",
+        "illuminate/http": "^11.0|^12.0|^13.0",
+        "illuminate/support": "^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.13",
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "pestphp/pest": "^3.0|^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Byl\\Laravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Byl\\Laravel\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "lint": "vendor/bin/pint"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Byl\\Laravel\\BylServiceProvider"
+            ],
+            "aliases": {
+                "Byl": "Byl\\Laravel\\Facades\\Byl"
+            }
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
