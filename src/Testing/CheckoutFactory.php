@@ -6,7 +6,10 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
- * Тестэд зориулсан checkout-ийн бодит бүтэцтэй payload.
+ * Тестэд зориулсан checkout-ийн payload. Бүтэц нь Byl-ийн
+ * `checkout.completed` webhook болон checkout-ийн API-ийн хариутай ижил —
+ * харилцагч нь `customer` объект, item дээр `price` ба `product` объект
+ * тус тусдаа, дүн нь string хэлбэрээр ирдэг.
  */
 class CheckoutFactory
 {
@@ -34,23 +37,31 @@ class CheckoutFactory
         return array_merge([
             'id' => $id,
             'url' => rtrim($baseUrl, '/').'/h/checkout/'.$id.'/Yi7smBuk',
-            'client_reference_id' => null,
             'mode' => 'payment',
+            'items' => [],
             'status' => 'open',
-            'expires_at' => Carbon::now()->addHours(6)->toJSON(),
-            'amount_subtotal' => 1000,
-            'amount_total' => 1000,
-            'customer_id' => null,
-            'customer_email' => null,
+            'customer' => null,
             'is_guest' => true,
-            'allow_promotion_codes' => false,
             'created_at' => Carbon::now()->toJSON(),
+            'expires_at' => Carbon::now()->addHours(6)->toJSON(),
+            'project_id' => 1,
             'updated_at' => Carbon::now()->toJSON(),
+            'amount_total' => '1000.000000000000',
+            'coupon_codes' => [],
+            'phone_number' => null,
+            'customer_email' => null,
+            'amount_subtotal' => '1000.000000000000',
+            'subscription_id' => null,
+            'delivery_address' => null,
+            'email_collection' => true,
+            'client_reference_id' => null,
+            'phone_number_collection' => false,
+            'delivery_address_collection' => false,
         ], $attributes);
     }
 
     /**
-     * Webhook-д ирдэг төлөгдсөн checkout (items, coupon_codes-той).
+     * Webhook-д ирдэг төлөгдсөн checkout (items, харилцагчтай).
      *
      * @param  array<string, mixed>  $attributes
      * @return array<string, mixed>
@@ -59,28 +70,35 @@ class CheckoutFactory
     {
         return self::make(array_merge([
             'status' => 'complete',
-            'payment_method' => 'qpay',
+            'is_guest' => false,
+            'customer' => [
+                'id' => 12,
+                'name' => 'Бат-Эрдэнэ',
+                'client_reference_id' => null,
+            ],
+            'customer_email' => 'customer@example.mn',
             'items' => [
                 [
-                    'id' => 69,
-                    'price_id' => 17,
+                    'price' => [
+                        'id' => 17,
+                        'type' => 'recurring',
+                        'lookup_key' => 'starter_monthly',
+                        'unit_amount' => 1000,
+                        'recurring_interval' => 'month',
+                        'recurring_interval_count' => 1,
+                    ],
+                    'product' => [
+                        'id' => 15,
+                        'name' => 'Product 1',
+                        'client_reference_id' => null,
+                    ],
                     'quantity' => 1,
                     'amount_unit' => 1000,
                     'amount_total' => 1000,
                     'amount_subtotal' => 1000,
-                    'price' => [
-                        'id' => 17,
-                        'unit_amount' => 1000,
-                        'product_id' => 15,
-                        'product' => [
-                            'id' => 15,
-                            'name' => 'Product 1',
-                            'client_reference_id' => null,
-                        ],
-                    ],
+                    'adjustable_quantity' => null,
                 ],
             ],
-            'coupon_codes' => [],
         ], $attributes), $baseUrl);
     }
 }

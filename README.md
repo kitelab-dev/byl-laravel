@@ -270,6 +270,13 @@ Route::get('/pro', ...)->middleware('byl.subscribed:growth_monthly');
 
 `config('byl.billable.redirect_to')` тохируулбал эрхгүй хэрэглэгчийг тэр хаяг руу чиглүүлнэ, эс бөгөөс 403 буцаана.
 
+> **Lookup key.** Багцаар шалгах (`subscribed('starter_monthly')`) боломж нь Byl дээр
+> тухайн үнэд lookup key тохируулсан байхыг шаардана — тохируулаагүй үнэ дээр
+> `lookup_key` нь `null` тул `subscribedToPrice($priceId)` эсвэл
+> `subscribedToProduct($productId)` хэрэглэнэ. Мөн 2026-08-22-аас өмнөх Byl
+> webhook нь lookup key явуулдаггүй байсан тул тэр үед үүссэн мөрүүдийг
+> `php artisan byl:backfill-subscriptions` командаар нөхөнө.
+
 ### Захиалга эхлүүлэх
 
 ```php
@@ -321,6 +328,17 @@ $user->syncBylSubscriptions();     // Byl дээрх захиалгуудыг л
 $user->asBylCustomer();            // API-аас харилцагчийн мэдээлэл (эрхтэй захиалгын хамт)
 $user->syncBylCustomerDetails();   // нэр/и-мэйл/утсаа Byl дээр шинэчлэх
 ```
+
+Бүх billable-ыг нэг дор нөхөх (алдсан webhook, эсвэл `lookup_key` хоосон
+үлдсэн мөрүүдийг засах):
+
+```bash
+php artisan byl:backfill-subscriptions
+php artisan byl:backfill-subscriptions --chunk=500
+```
+
+`byl_customer_id` бүхий billable бүрийн захиалгыг API-аас татаж локал мөрийг
+шинэчилнэ — нэг харилцагч дээр алдаа гарвал алгасаад үргэлжилнэ.
 
 `client_reference_id` нь өгөгдмөлөөр primary key. Өөрөөр холбох бол:
 
@@ -507,7 +525,16 @@ it('захиалга цуцлагдахад эрх хаагдана', function (
 });
 ```
 
-`FakeWebhook::invoicePaid()`, `FakeWebhook::checkoutCompleted()`, `FakeWebhook::make($type, $object, $data)` мөн бэлэн байна. Payload-ыг `InvoiceFactory`, `CheckoutFactory`, `CustomerFactory`, `SubscriptionFactory` (`Byl\Laravel\Testing\`) хэлбэрээр өөрчилнө.
+`FakeWebhook::invoicePaid()`, `FakeWebhook::checkoutCompleted()`, `FakeWebhook::make($type, $object, $data)` мөн бэлэн байна. Payload-ыг `InvoiceFactory`, `CheckoutFactory`, `CustomerFactory`, `SubscriptionFactory` (`Byl\Laravel\Testing\`) хэлбэрээр өөрчилнө — тэдгээр нь Byl-ээс ирдэг бодит payload-ийн бүтцийг (харилцагч нь `customer` объект, бүтээгдэхүүн нь `product` объект, үнэ нь `price` объект) хуулбарладаг.
+
+Lookup key тохируулаагүй үнийг симуляц хийх:
+
+```php
+$webhook = FakeWebhook::subscription(
+    WebhookEventType::SubscriptionCreated,
+    SubscriptionFactory::withoutLookupKey(['id' => 4]),
+);
+```
 
 ## Хөгжүүлэлт
 

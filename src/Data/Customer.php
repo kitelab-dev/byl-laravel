@@ -71,7 +71,7 @@ final class Customer extends Data
     public function subscriptionForLookupKey(string $lookupKey): ?Subscription
     {
         return $this->subscriptions->first(
-            fn (Subscription $subscription) => $subscription->price?->lookupKey === $lookupKey
+            fn (Subscription $subscription) => $subscription->lookupKey === $lookupKey
         );
     }
 }

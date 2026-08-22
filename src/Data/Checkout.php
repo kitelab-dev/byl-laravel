@@ -59,8 +59,10 @@ final class Checkout extends Data implements Responsable
             expiresAt: self::date(Arr::get($data, 'expires_at')),
             amountSubtotal: self::number(Arr::get($data, 'amount_subtotal')),
             amountTotal: self::number(Arr::get($data, 'amount_total')),
-            customerId: Arr::get($data, 'customer_id') !== null ? (int) Arr::get($data, 'customer_id') : null,
-            customerEmail: Arr::get($data, 'customer_email'),
+            customerId: Arr::get($data, 'customer_id') !== null
+                ? (int) Arr::get($data, 'customer_id')
+                : (Arr::get($data, 'customer.id') !== null ? (int) Arr::get($data, 'customer.id') : null),
+            customerEmail: Arr::get($data, 'customer_email') ?? Arr::get($data, 'customer.email'),
             phoneNumber: Arr::get($data, 'phone_number'),
             isGuest: (bool) Arr::get($data, 'is_guest', false),
             allowPromotionCodes: (bool) Arr::get($data, 'allow_promotion_codes', false),

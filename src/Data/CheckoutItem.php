@@ -30,10 +30,15 @@ final class CheckoutItem extends Data
     {
         $price = Arr::get($data, 'price');
 
+        // Webhook payload-д бүтээгдэхүүн item-ийн дор тусдаа, API-д үнийн дор ирдэг.
+        $product = Arr::get($data, 'product') ?? Arr::get($data, 'price.product');
+
         return new self(
             id: Arr::get($data, 'id') !== null ? (int) Arr::get($data, 'id') : null,
-            priceId: Arr::get($data, 'price_id') !== null ? (int) Arr::get($data, 'price_id') : null,
-            productName: Arr::get($data, 'product_name') ?? Arr::get($data, 'price.product.name'),
+            priceId: Arr::get($data, 'price_id') !== null
+                ? (int) Arr::get($data, 'price_id')
+                : (Arr::get($data, 'price.id') !== null ? (int) Arr::get($data, 'price.id') : null),
+            productName: Arr::get($data, 'product_name') ?? Arr::get($product ?? [], 'name'),
             quantity: Arr::get($data, 'quantity') !== null ? (int) Arr::get($data, 'quantity') : null,
             amountUnit: self::number(Arr::get($data, 'amount_unit')),
             amountSubtotal: self::number(Arr::get($data, 'amount_subtotal')),

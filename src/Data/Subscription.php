@@ -18,6 +18,7 @@ final class Subscription extends Data
         public readonly ?int $customerId,
         public readonly ?int $productId,
         public readonly ?int $priceId,
+        public readonly ?string $lookupKey,
         public readonly ?Carbon $currentPeriodStart,
         public readonly ?Carbon $currentPeriodEnd,
         public readonly ?Carbon $trialEndsAt,
@@ -44,6 +45,13 @@ final class Subscription extends Data
         // Webhook payload-д бүтээгдэхүүн тусдаа, API-д үнийн дор ирдэг.
         $product = Arr::get($data, 'product') ?? Arr::get($data, 'price.product');
 
+        // Lookup key нь үнийн объект дор ирдэг. Туршилт эхлүүлэх хүсэлт нь
+        // `price` талбарт lookup key дамжуулдаг тул хариунд объектын оронд
+        // тэр string эгшиж ирэх тохиолдлыг ч даана.
+        $lookupKey = (is_array($price) ? Arr::get($price, 'lookup_key') : null)
+            ?? Arr::get($data, 'lookup_key')
+            ?? (is_string($price) && ! is_numeric($price) ? $price : null);
+
         return new self(
             id: Arr::get($data, 'id') !== null ? (int) Arr::get($data, 'id') : null,
             status: self::enum(SubscriptionStatus::class, Arr::get($data, 'status')),
@@ -57,6 +65,7 @@ final class Subscription extends Data
             priceId: Arr::get($data, 'price_id') !== null
                 ? (int) Arr::get($data, 'price_id')
                 : (Arr::get($data, 'price.id') !== null ? (int) Arr::get($data, 'price.id') : null),
+            lookupKey: $lookupKey,
             currentPeriodStart: self::date(Arr::get($data, 'current_period_start')),
             currentPeriodEnd: self::date(Arr::get($data, 'current_period_end')),
             trialEndsAt: self::date(Arr::get($data, 'trial_ends_at')),

@@ -86,6 +86,7 @@ it('builder нь хоосон discounts талбарыг payload-д оруула
 it('checkout лавлахад items болон хөнгөлөлтийн код parse хийгдэнэ', function () {
     Http::fake([
         'byl.mn/api/v1/projects/1/checkouts/13338' => Http::response(bylResponse(CheckoutFactory::completed([
+            'payment_method' => 'qpay',
             'id' => 13338,
             'coupon_codes' => [
                 [

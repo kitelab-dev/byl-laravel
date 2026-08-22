@@ -3,6 +3,7 @@
 namespace Byl\Laravel;
 
 use Byl\Laravel\Billing\Listeners\SyncBylSubscription;
+use Byl\Laravel\Console\BackfillSubscriptionsCommand;
 use Byl\Laravel\Events\WebhookReceived;
 use Byl\Laravel\Http\Middleware\EnsureSubscribed;
 use Byl\Laravel\Http\Middleware\VerifyBylSignature;
@@ -36,6 +37,8 @@ class BylServiceProvider extends ServiceProvider
             $this->publishesMigrations([
                 __DIR__.'/../database/migrations' => $this->app->databasePath('migrations'),
             ], 'byl-migrations');
+
+            $this->commands([BackfillSubscriptionsCommand::class]);
         }
 
         $this->registerMiddleware();

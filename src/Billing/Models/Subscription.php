@@ -71,7 +71,7 @@ class Subscription extends Model
             'byl_customer_id' => $subscription->customerId,
             'product_id' => $subscription->productId,
             'price_id' => $subscription->priceId,
-            'lookup_key' => $subscription->price?->lookupKey,
+            'lookup_key' => $subscription->lookupKey,
             'status' => $subscription->status?->value ?? SubscriptionStatus::Canceled->value,
             'current_period_start' => $subscription->currentPeriodStart,
             'current_period_end' => $subscription->currentPeriodEnd,
@@ -88,8 +88,11 @@ class Subscription extends Model
     {
         $attributes = static::attributesFrom($subscription);
 
-        // lookup_key нь зарим хариунд ирэхгүй — байгаа утгыг дарж болохгүй.
-        if ($attributes['lookup_key'] === null) {
+        // lookup_key нь зарим хариунд ирэхгүй — тэр үед байгаа утгыг дарж
+        // болохгүй. Харин хариунд өөр үнэ мэдээлсэн бол хуучин key хүчингүй
+        // болсон тул null-аар нь бичиж, зөрчилтэй хос үлдэхээс сэргийлнэ.
+        if ($attributes['lookup_key'] === null
+            && ($attributes['price_id'] === null || $attributes['price_id'] === $this->price_id)) {
             unset($attributes['lookup_key']);
         }
 
