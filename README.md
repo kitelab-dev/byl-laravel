@@ -134,12 +134,14 @@ $checkout = Byl::checkouts()->create([
 ```php
 $checkout = Byl::checkouts()->find(13338);
 
-$checkout->status;              // CheckoutStatus::Open|Complete|Expired
+$checkout->status;              // CheckoutStatus::Open|Pending|Complete|Expired
 $checkout->amountTotal;
 $checkout->items;               // Collection<CheckoutItem>
 $checkout->couponCodes;         // Collection<CouponCode>
 $checkout->discountTotal();
 ```
+
+> **`pending` төлөв.** Банкны дансаар төлөх үед харилцагч «Шилжүүлсэн» гэж мэдэгдсэн ч merchant баталгаажуулаагүй байвал checkout `pending` төлөвтэй байна (`$checkout->isPending()`). Мөнгө баталгаажаагүй тул энэ үед бараа/эрх олгож болохгүй — зөвхөн `checkout.completed` (эсвэл `isComplete()`) дээр олгоно.
 
 > **Хөнгөлөлтийн код.** Бүтээгдэхүүний хямдралтай код ашиглах бол бүх item-д `price_id` (`addPriceId()`) хэрэглэнэ. Захиалгын нийт дүнгээс хөнгөлөх кодод `price_data` ч болно.
 
@@ -409,7 +411,36 @@ Event классууд (`Byl\Laravel\Events\`):
 | `SubscriptionRenewalDue` | `subscription.renewal_due` |
 | `SubscriptionPastDue` | `subscription.past_due` |
 | `SubscriptionCanceled` | `subscription.canceled` |
+| `PaymentAwaitingVerification` | `payment.awaiting_verification` |
+| `PaymentVerificationDue` | `payment.verification_due` |
 | `WebhookReceived` | бүх event (танигдаагүй төрөл ч) |
+
+### Банкны шилжүүлэг
+
+Банкны дансаар төлөх үед харилцагч шилжүүлгээ хийснээ мэдэгдэхэд **`payment.awaiting_verification`**, баталгаажуулаагүй шилжүүлгийн 3 хоногийн хугацаа дуусахаас 24 цагийн өмнө **`payment.verification_due`** event ирнэ. Хоёулангийнх нь объект нь `Byl\Laravel\Data\Payment` DTO:
+
+```php
+use Byl\Laravel\Events\PaymentAwaitingVerification;
+
+Event::listen(function (PaymentAwaitingVerification $event) {
+    $payment = $event->payment;
+
+    $payment->status;            // PaymentStatus::Pending
+    $payment->reference;         // '482913' — шилжүүлгийн лавлагаа
+    $payment->amount;            // 150000.0
+    $payment->bankName;
+    $payment->accountNumber;
+    $payment->claimedAt;         // харилцагч мэдэгдсэн хугацаа
+    $payment->expiresAt;
+    $payment->payableType();     // 'checkout' | 'invoice'
+    $payment->payableId();
+    $payment->payableUrl();
+
+    Admin::notify("Шилжүүлэг баталгаажуулна уу: {$payment->reference}");
+});
+```
+
+> Энэ хоёр event нь **төлбөр төлөгдсөн гэсэн үг биш** — merchant Byl дээр баталгаажуулсны дараа `checkout.completed` / `invoice.paid` ирнэ. Эрхийг зөвхөн тэр үед олгоно.
 
 Хаяг эсвэл middleware-г тохируулах:
 

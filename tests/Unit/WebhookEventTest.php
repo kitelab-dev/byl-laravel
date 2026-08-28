@@ -2,10 +2,16 @@
 
 use Byl\Laravel\Data\Checkout;
 use Byl\Laravel\Data\Invoice;
+use Byl\Laravel\Data\Payment;
 use Byl\Laravel\Data\Subscription;
+use Byl\Laravel\Enums\PaymentStatus;
 use Byl\Laravel\Enums\WebhookEventType;
+use Byl\Laravel\Events\PaymentAwaitingVerification;
+use Byl\Laravel\Events\PaymentVerificationDue;
 use Byl\Laravel\Testing\FakeWebhook;
+use Byl\Laravel\Testing\PaymentFactory;
 use Byl\Laravel\Webhooks\WebhookEvent;
+use Byl\Laravel\Webhooks\WebhookEventMap;
 
 it('payload-аас event-ийн мэдээллийг уншина', function () {
     $event = WebhookEvent::fromArray(FakeWebhook::invoicePaid(['id' => 71])->payload());
@@ -72,3 +78,36 @@ it('webhook дахь subscription-ийн бүтээгдэхүүнийг унши
         ->and($subscription->customer?->clientReferenceId)->toBe('user_842')
         ->and($subscription->isEntitled())->toBeTrue();
 });
+
+it('банкны шилжүүлгийн event-үүдийг Payment DTO болгон уншина', function (string $type) {
+    $webhook = FakeWebhook::make($type, 'payment', PaymentFactory::awaitingVerification(['id' => 4021]));
+
+    $event = WebhookEvent::fromArray($webhook->payload());
+
+    expect($event->type)->toBe($type)
+        ->and($event->type())->toBe(WebhookEventType::from($type))
+        ->and($event->object)->toBe('payment')
+        ->and($event->resource())->toBeInstanceOf(Payment::class)
+        ->and($event->payment()->id)->toBe(4021)
+        ->and($event->payment()->status)->toBe(PaymentStatus::Pending)
+        ->and($event->payment()->reference)->toBe('482913')
+        ->and($event->payment()->isBankTransfer())->toBeTrue()
+        ->and($event->payment()->claimedAt)->not->toBeNull();
+})->with([
+    'payment.awaiting_verification',
+    'payment.verification_due',
+]);
+
+it('банкны шилжүүлгийн event-үүдийг тохирох Laravel event класстай холбоно', function (WebhookEventType $type, string $class) {
+    $webhook = FakeWebhook::make($type, 'payment', PaymentFactory::awaitingVerification());
+
+    $laravelEvent = WebhookEventMap::make(WebhookEvent::fromArray($webhook->payload()));
+
+    expect($laravelEvent)->toBeInstanceOf($class)
+        ->and($laravelEvent->payment)->toBeInstanceOf(Payment::class)
+        ->and($laravelEvent->payment->isPending())->toBeTrue()
+        ->and($laravelEvent->event->type())->toBe($type);
+})->with([
+    [WebhookEventType::PaymentAwaitingVerification, PaymentAwaitingVerification::class],
+    [WebhookEventType::PaymentVerificationDue, PaymentVerificationDue::class],
+]);

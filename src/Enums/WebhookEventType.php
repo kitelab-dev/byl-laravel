@@ -15,4 +15,6 @@ enum WebhookEventType: string
     case SubscriptionRenewalDue = 'subscription.renewal_due';
     case SubscriptionPastDue = 'subscription.past_due';
     case SubscriptionCanceled = 'subscription.canceled';
+    case PaymentAwaitingVerification = 'payment.awaiting_verification';
+    case PaymentVerificationDue = 'payment.verification_due';
 }

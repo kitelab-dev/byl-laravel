@@ -3,9 +3,14 @@
 use Byl\Laravel\Data\Checkout;
 use Byl\Laravel\Data\Invoice;
 use Byl\Laravel\Data\Page;
+use Byl\Laravel\Data\Payment;
 use Byl\Laravel\Data\Subscription;
+use Byl\Laravel\Enums\CheckoutStatus;
 use Byl\Laravel\Enums\InvoiceStatus;
+use Byl\Laravel\Enums\PaymentStatus;
 use Byl\Laravel\Enums\SubscriptionStatus;
+use Byl\Laravel\Testing\CheckoutFactory;
+use Byl\Laravel\Testing\PaymentFactory;
 use Byl\Laravel\Testing\SubscriptionFactory;
 
 it('танигдаагүй enum утга дээр null болно', function () {
@@ -203,4 +208,117 @@ it('checkout webhook-ийн бодит payload-аас харилцагч ба it
         ->and($checkout->items->first()->productName)->toBe('Mybot pro')
         ->and($checkout->items->first()->quantity)->toBe(1)
         ->and($checkout->items->first()->amountTotal)->toBe(450.0);
+});
+
+it('банкны шилжүүлгийн payment payload-ыг бүрэн уншина', function () {
+    // Byl-ээс ирсэн `payment.awaiting_verification` event-ийн `data.object`.
+    $payment = Payment::fromArray([
+        'id' => 4021,
+        'project_id' => 712,
+        'status' => 'pending',
+        'driver' => 'bank_transfer',
+        'amount' => '150000.000000000000',
+        'description' => 'Захиалга #1024',
+        'reference' => '482913',
+        'bank_name' => 'Хаан банк',
+        'account_number' => '5001234567',
+        'claimed_at' => '2026-08-22T05:10:00.000000Z',
+        'expires_at' => '2026-08-25T05:01:07.000000Z',
+        'customer_email' => 'chmunkhsaikhan@gmail.com',
+        'phone_number' => '99112233',
+        'is_test' => false,
+        'created_at' => '2026-08-22T05:01:07.000000Z',
+        'payable' => [
+            'type' => 'checkout',
+            'id' => 71091,
+            'url' => 'https://byl.mn/h/checkout/71091/HU4Z0nJrvGdAINbFcmWzTalg8W6L6Cfx',
+            'status' => 'pending',
+        ],
+    ]);
+
+    expect($payment->id)->toBe(4021)
+        ->and($payment->projectId)->toBe(712)
+        ->and($payment->status)->toBe(PaymentStatus::Pending)
+        ->and($payment->isPending())->toBeTrue()
+        ->and($payment->isPaid())->toBeFalse()
+        ->and($payment->driver)->toBe('bank_transfer')
+        ->and($payment->isBankTransfer())->toBeTrue()
+        ->and($payment->amount)->toBe(150000.0)
+        ->and($payment->description)->toBe('Захиалга #1024')
+        ->and($payment->reference)->toBe('482913')
+        ->and($payment->bankName)->toBe('Хаан банк')
+        ->and($payment->accountNumber)->toBe('5001234567')
+        ->and($payment->claimedAt?->toDateTimeString())->toBe('2026-08-22 05:10:00')
+        ->and($payment->expiresAt?->toDateTimeString())->toBe('2026-08-25 05:01:07')
+        ->and($payment->customerEmail)->toBe('chmunkhsaikhan@gmail.com')
+        ->and($payment->phoneNumber)->toBe('99112233')
+        ->and($payment->isTest)->toBeFalse()
+        ->and($payment->createdAt?->toDateTimeString())->toBe('2026-08-22 05:01:07')
+        ->and($payment->payableType())->toBe('checkout')
+        ->and($payment->payableId())->toBe(71091)
+        ->and($payment->payableUrl())->toBe('https://byl.mn/h/checkout/71091/HU4Z0nJrvGdAINbFcmWzTalg8W6L6Cfx')
+        ->and($payment->payableStatus())->toBe('pending')
+        ->and($payment->payableNumber())->toBeNull()
+        ->and($payment->isForCheckout())->toBeTrue()
+        ->and($payment->isForInvoice())->toBeFalse();
+});
+
+it('нэхэмжлэхийн payment дээр payable дугаарыг уншина', function () {
+    $payment = Payment::fromArray(PaymentFactory::make([
+        'payable' => [
+            'type' => 'invoice',
+            'id' => 71,
+            'url' => 'https://byl.mn/h/invoice/71',
+            'status' => 'open',
+            'number' => 'INV-0071',
+        ],
+    ]));
+
+    expect($payment->payableType())->toBe('invoice')
+        ->and($payment->payableNumber())->toBe('INV-0071')
+        ->and($payment->isForInvoice())->toBeTrue()
+        ->and($payment->isForCheckout())->toBeFalse();
+});
+
+it('дутуу талбартай payment дээр ч бүтэн объект үүсгэнэ', function () {
+    $payment = Payment::fromArray(['id' => 9]);
+
+    expect($payment->id)->toBe(9)
+        ->and($payment->status)->toBeNull()
+        ->and($payment->amount)->toBeNull()
+        ->and($payment->reference)->toBeNull()
+        ->and($payment->claimedAt)->toBeNull()
+        ->and($payment->payable)->toBeNull()
+        ->and($payment->payableType())->toBeNull()
+        ->and($payment->payableId())->toBeNull()
+        ->and($payment->isTest)->toBeFalse()
+        ->and($payment->isPending())->toBeFalse()
+        ->and($payment->toArray())->toBe(['id' => 9]);
+});
+
+it('танигдаагүй payment төлөв дээр null болно', function () {
+    $payment = Payment::fromArray(['id' => 1, 'status' => 'brand_new_status']);
+
+    expect($payment->status)->toBeNull()
+        ->and($payment->raw('status'))->toBe('brand_new_status')
+        ->and($payment->isPaid())->toBeFalse();
+});
+
+it('payment төлөвийн helper-ууд зөв ажиллана', function () {
+    expect(PaymentStatus::Paid->isPaid())->toBeTrue()
+        ->and(PaymentStatus::Pending->isPaid())->toBeFalse()
+        ->and(PaymentStatus::Pending->isPending())->toBeTrue()
+        ->and(PaymentStatus::Failed->isPending())->toBeFalse()
+        ->and(PaymentStatus::tryFrom('refunded'))->toBe(PaymentStatus::Refunded);
+});
+
+it('баталгаажуулалт хүлээж буй checkout нь pending төлөвтэй', function () {
+    $checkout = Checkout::fromArray(CheckoutFactory::make(['status' => 'pending']));
+
+    expect($checkout->status)->toBe(CheckoutStatus::Pending)
+        ->and($checkout->status->isPending())->toBeTrue()
+        ->and($checkout->isPending())->toBeTrue()
+        ->and($checkout->isComplete())->toBeFalse()
+        ->and($checkout->isExpired())->toBeFalse()
+        ->and(CheckoutStatus::Complete->isPending())->toBeFalse();
 });

@@ -4,10 +4,13 @@ use Byl\Laravel\Enums\SubscriptionStatus;
 use Byl\Laravel\Enums\WebhookEventType;
 use Byl\Laravel\Events\CheckoutCompleted;
 use Byl\Laravel\Events\InvoicePaid;
+use Byl\Laravel\Events\PaymentAwaitingVerification;
+use Byl\Laravel\Events\PaymentVerificationDue;
 use Byl\Laravel\Events\SubscriptionCanceled;
 use Byl\Laravel\Events\SubscriptionRenewed;
 use Byl\Laravel\Events\WebhookReceived;
 use Byl\Laravel\Testing\FakeWebhook;
+use Byl\Laravel\Testing\PaymentFactory;
 use Byl\Laravel\Webhooks\WebhookSignature;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -149,3 +152,24 @@ it('өөрийн route дээр byl-signature middleware ашиглаж болн
 it('webhook route нь тохируулсан хаяг дээр бүртгэгдэнэ', function () {
     expect(route('byl.webhook'))->toBe(url('byl/webhook'));
 });
+
+it('банкны шилжүүлгийн event-үүдийг хувиргана', function (WebhookEventType $type, string $class) {
+    Event::fake();
+
+    $webhook = FakeWebhook::make($type, 'payment', PaymentFactory::awaitingVerification(['id' => 4021]));
+
+    $this->postJson(route('byl.webhook'), $webhook->payload(), $webhook->headers())->assertOk();
+
+    Event::assertDispatched($class, function ($event) {
+        expect($event->payment->id)->toBe(4021)
+            ->and($event->payment->reference)->toBe('482913')
+            ->and($event->payment->isPending())->toBeTrue()
+            ->and($event->payment->isPaid())->toBeFalse()
+            ->and($event->payment->payableId())->toBe(13338);
+
+        return true;
+    });
+})->with([
+    [WebhookEventType::PaymentAwaitingVerification, PaymentAwaitingVerification::class],
+    [WebhookEventType::PaymentVerificationDue, PaymentVerificationDue::class],
+]);
