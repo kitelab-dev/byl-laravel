@@ -7,6 +7,8 @@ use Byl\Laravel\Events\CheckoutCompleted;
 use Byl\Laravel\Events\CheckoutExpired;
 use Byl\Laravel\Events\InvoicePaid;
 use Byl\Laravel\Events\InvoiceVoided;
+use Byl\Laravel\Events\PaymentAwaitingVerification;
+use Byl\Laravel\Events\PaymentVerificationDue;
 use Byl\Laravel\Events\SubscriptionCanceled;
 use Byl\Laravel\Events\SubscriptionCreated;
 use Byl\Laravel\Events\SubscriptionPastDue;
@@ -36,6 +38,8 @@ class WebhookEventMap
             WebhookEventType::SubscriptionRenewalDue => new SubscriptionRenewalDue($event->subscription(), $event),
             WebhookEventType::SubscriptionPastDue => new SubscriptionPastDue($event->subscription(), $event),
             WebhookEventType::SubscriptionCanceled => new SubscriptionCanceled($event->subscription(), $event),
+            WebhookEventType::PaymentAwaitingVerification => new PaymentAwaitingVerification($event->payment(), $event),
+            WebhookEventType::PaymentVerificationDue => new PaymentVerificationDue($event->payment(), $event),
             default => null,
         };
     }

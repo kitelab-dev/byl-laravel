@@ -2,6 +2,34 @@
 
 Бүх томоохон өөрчлөлтийг энд бүртгэнэ.
 
+## v0.1.3
+
+- **Банкны шилжүүлгийн (`bank_transfer`) дэмжлэг.** Byl дээр банкны дансаар
+  төлөх боломж нэмэгдсэнтэй холбоотойгоор SDK шинэ `pending` төлөв болон
+  хоёр webhook event-ийг таньдаг болов.
+- `Enums\CheckoutStatus::Pending` нэмэгдэв — харилцагч шилжүүлгээ хийснээ
+  мэдэгдсэн ч merchant баталгаажуулаагүй checkout. Өмнө нь энэ утга
+  танигдахгүй `null` болж байсан. `CheckoutStatus::isPending()` ба
+  `Data\Checkout::isPending()` helper-ууд нэмэгдэв. **Эрх/бараагаа зөвхөн
+  `isComplete()` дээр олгоно** — `pending` нь төлөгдсөн гэсэн үг биш.
+- **`Enums\PaymentStatus`** (шинэ) — `pending`, `paid`, `failed`, `refunded`
+  болон `isPaid()`, `isPending()`.
+- **`Data\Payment`** (шинэ) — нэг төлбөрийн оролдлогын DTO: `reference`
+  (шилжүүлгийн лавлагаа; бусад driver дээр `transaction_id`-аас уншина),
+  `bankName`, `accountNumber`, `claimedAt`, `expiresAt`, `amount`,
+  `isTest` зэрэг талбарууд, төлбөр хамаарах checkout/нэхэмжлэхийн
+  `payableType()` / `payableId()` / `payableUrl()` / `payableStatus()` /
+  `payableNumber()` accessor-ууд.
+- **Шинэ event класс** `Events\PaymentAwaitingVerification`
+  (`payment.awaiting_verification`) — харилцагч шилжүүлэг хийснээ
+  мэдэгдсэн, merchant баталгаажуулахыг хүлээж байна; ба
+  `Events\PaymentVerificationDue` (`payment.verification_due`) —
+  баталгаажуулах 3 хоногийн хугацаа дуусахаас 24 цагийн өмнөх сануулга.
+- `Webhooks\WebhookEvent::payment()` нэмэгдэж, `resource()` нь `payment`
+  объектын хувьд `Data\Payment` буцаадаг болов.
+- **`Testing\PaymentFactory`** (шинэ) — бодит payload-ийн бүтэцтэй
+  `make()`, `awaitingVerification()`, `paid()`, `forInvoice()`.
+
 ## v0.1.2
 
 - **Захиалгын `lookup_key` хоосон үлдэх асуудал зассан.** Byl-ийн webhook нь

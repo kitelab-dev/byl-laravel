@@ -88,6 +88,15 @@ final class Checkout extends Data implements Responsable
         return $this->status?->isComplete() ?? false;
     }
 
+    /**
+     * Банкны шилжүүлгийн баталгаажуулалт хүлээж буй checkout — төлбөр
+     * баталгаажаагүй тул эрх/бараа олгож болохгүй.
+     */
+    public function isPending(): bool
+    {
+        return $this->status?->isPending() ?? false;
+    }
+
     public function isExpired(): bool
     {
         return $this->status === CheckoutStatus::Expired;

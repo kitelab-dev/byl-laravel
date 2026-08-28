@@ -5,6 +5,7 @@ namespace Byl\Laravel\Webhooks;
 use Byl\Laravel\Data\Checkout;
 use Byl\Laravel\Data\Data;
 use Byl\Laravel\Data\Invoice;
+use Byl\Laravel\Data\Payment;
 use Byl\Laravel\Data\Subscription;
 use Byl\Laravel\Enums\WebhookEventType;
 use Illuminate\Contracts\Support\Arrayable;
@@ -87,6 +88,11 @@ class WebhookEvent implements Arrayable
         return Subscription::fromArray($this->objectData());
     }
 
+    public function payment(): Payment
+    {
+        return Payment::fromArray($this->objectData());
+    }
+
     /**
      * `object` талбараас хамааран тохирох DTO-г буцаана.
      */
@@ -96,6 +102,7 @@ class WebhookEvent implements Arrayable
             'invoice' => $this->invoice(),
             'checkout' => $this->checkout(),
             'subscription' => $this->subscription(),
+            'payment' => $this->payment(),
             default => null,
         };
     }
